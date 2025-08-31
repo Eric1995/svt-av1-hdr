@@ -50,6 +50,8 @@ jobs:
       CMAKE_GENERATOR: "${{ matrix.config.generators }}"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
       - uses: ilammy/setup-nasm@v1
       - run: git fetch --prune --unshallow
       - name: Ubuntu/Mac OS X
@@ -64,3 +66,26 @@ jobs:
           cmake -B Build -A "${{ matrix.config.msvc_arch }}" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_APPS=ON -DBUILD_DEC=OFF -DREPRODUCIBLE_BUILDS=ON
           cmake --build Build --config Release
         shell: cmd
+
+      # --- 将最终文件上传为产物 ---
+
+      - name: Upload Windows artifacts
+        if: contains( matrix.config.generators, 'Visual Studio' )
+        uses: actions/upload-artifact@v4
+        with:
+          name: svt-av1-win64
+          path: Build/Release/*.exe
+
+      - name: Upload Ubuntu artifacts
+        if: ${{ matrix.config.os == 'ubuntu-latest' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: svt-av1-ubuntu-${{ matrix.config.c_compiler }}
+          path: Build/SvtAv1EncApp
+
+      - name: Upload Mac artifacts
+        if: ${{ matrix.config.os == 'macos-latest' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: svt-av1-macos-arm64
+          path: Build/SvtAv1EncApp
